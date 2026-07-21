@@ -1,0 +1,93 @@
+# =============================================================================
+# Python
+# =============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+.eggs/
+*.egg-info/
+dist/
+build/
+*.egg
+pip-wheel-metadata/
+*.whl
+
+# Test / coverage
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage/
+coverage.xml
+*.cover
+*.py,cover
+nosetests.xml
+pytest.xml
+
+# Type checking
+.dmypy.json
+dmypy.json
+
+# =============================================================================
+# Node / JavaScript / TypeScript
+# =============================================================================
+node_modules/
+.next/
+out/
+.nuxt/
+.output/
+.cache/
+.parcel-cache/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.tsbuildinfo
+.turbo/
+
+# =============================================================================
+# Environment — keep .env.example, ignore everything else
+# =============================================================================
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+!.env.example
+
+# =============================================================================
+# Logs
+# =============================================================================
+*.log
+logs/
+
+# =============================================================================
+# OS artefacts
+# =============================================================================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =============================================================================
+# IDEs / editors
+# =============================================================================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# =============================================================================
+# Docker volumes (if mounted locally)
+# =============================================================================
+es_data/
+qdrant_data/
+redis_data/

@@ -1,0 +1,42 @@
+# Web framework
+fastapi>=0.111.0
+uvicorn[standard]>=0.30.0
+
+# Elasticsearch
+elasticsearch[async]==8.*
+
+# Vector DB
+qdrant-client>=1.9.0
+
+# Cache / broker
+redis>=5.0.0
+
+# HTTP client
+httpx>=0.27.0
+
+# RSS parsing
+feedparser>=6.0.11
+
+# HTML cleaning
+beautifulsoup4>=4.12.0
+lxml>=5.2.0
+
+# AI / LLM
+anthropic>=0.28.0
+
+# Embeddings
+sentence-transformers>=3.0.0
+
+# ML utilities
+scikit-learn>=1.4.0
+numpy>=1.26.0
+
+# Config / settings
+pydantic-settings>=2.2.0
+python-dotenv>=1.0.0
+
+# Scheduling
+apscheduler>=3.10.4
+
+# Near-duplicate detection
+simhash>=2.1.2

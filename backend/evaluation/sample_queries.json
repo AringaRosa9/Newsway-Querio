@@ -1,0 +1,182 @@
+[
+  {
+    "id": "q01",
+    "query": "人工智能最新进展",
+    "category": "tech",
+    "language": "zh",
+    "description": "General query for the latest AI developments",
+    "relevant_doc_ids": ["doc1", "doc2", "doc3"],
+    "relevance_grades": {"doc1": 3, "doc2": 2, "doc3": 1}
+  },
+  {
+    "id": "q02",
+    "query": "OpenAI GPT-5 release",
+    "category": "tech",
+    "language": "en",
+    "description": "Specific product release query",
+    "relevant_doc_ids": ["doc4", "doc5", "doc6"],
+    "relevance_grades": {"doc4": 3, "doc5": 3, "doc6": 2}
+  },
+  {
+    "id": "q03",
+    "query": "美联储加息决议",
+    "category": "finance",
+    "language": "zh",
+    "description": "Chinese query about Federal Reserve interest rate decisions",
+    "relevant_doc_ids": ["doc7", "doc8"],
+    "relevance_grades": {"doc7": 3, "doc8": 2}
+  },
+  {
+    "id": "q04",
+    "query": "Tesla stock price decline",
+    "category": "finance",
+    "language": "en",
+    "description": "Stock market query for a specific company",
+    "relevant_doc_ids": ["doc9", "doc10", "doc11"],
+    "relevance_grades": {"doc9": 3, "doc10": 2, "doc11": 1}
+  },
+  {
+    "id": "q05",
+    "query": "中美贸易摩擦最新动态",
+    "category": "politics",
+    "language": "zh",
+    "description": "Query about US-China trade tensions",
+    "relevant_doc_ids": ["doc12", "doc13", "doc14"],
+    "relevance_grades": {"doc12": 3, "doc13": 2, "doc14": 2}
+  },
+  {
+    "id": "q06",
+    "query": "Ukraine war ceasefire negotiations",
+    "category": "politics",
+    "language": "en",
+    "description": "Geopolitical conflict and diplomacy query",
+    "relevant_doc_ids": ["doc15", "doc16"],
+    "relevance_grades": {"doc15": 3, "doc16": 2}
+  },
+  {
+    "id": "q07",
+    "query": "新冠疫情变异株",
+    "category": "health",
+    "language": "zh",
+    "description": "COVID variant health query",
+    "relevant_doc_ids": ["doc17", "doc18", "doc19"],
+    "relevance_grades": {"doc17": 3, "doc18": 2, "doc19": 1}
+  },
+  {
+    "id": "q08",
+    "query": "GLP-1 weight loss drug side effects",
+    "category": "health",
+    "language": "en",
+    "description": "Pharmaceutical / health query",
+    "relevant_doc_ids": ["doc20", "doc21", "doc22"],
+    "relevance_grades": {"doc20": 3, "doc21": 3, "doc22": 1}
+  },
+  {
+    "id": "q09",
+    "query": "大模型训练成本下降",
+    "category": "tech",
+    "language": "zh",
+    "description": "Query about declining LLM training costs",
+    "relevant_doc_ids": ["doc23", "doc24"],
+    "relevance_grades": {"doc23": 3, "doc24": 2}
+  },
+  {
+    "id": "q10",
+    "query": "Apple Vision Pro sales numbers",
+    "category": "tech",
+    "language": "en",
+    "description": "Specific product sales performance query",
+    "relevant_doc_ids": ["doc25", "doc26", "doc27"],
+    "relevance_grades": {"doc25": 3, "doc26": 2, "doc27": 1}
+  },
+  {
+    "id": "q11",
+    "query": "比特币价格突破十万美元",
+    "category": "finance",
+    "language": "zh",
+    "description": "Cryptocurrency milestone query",
+    "relevant_doc_ids": ["doc28", "doc29"],
+    "relevance_grades": {"doc28": 3, "doc29": 2}
+  },
+  {
+    "id": "q12",
+    "query": "European Central Bank interest rate cut",
+    "category": "finance",
+    "language": "en",
+    "description": "Monetary policy query for the ECB",
+    "relevant_doc_ids": ["doc30", "doc31"],
+    "relevance_grades": {"doc30": 3, "doc31": 2}
+  },
+  {
+    "id": "q13",
+    "query": "气候变化碳排放目标",
+    "category": "environment",
+    "language": "zh",
+    "description": "Climate change and emissions targets",
+    "relevant_doc_ids": ["doc32", "doc33", "doc34"],
+    "relevance_grades": {"doc32": 3, "doc33": 2, "doc34": 1}
+  },
+  {
+    "id": "q14",
+    "query": "Paris climate agreement 2025 progress",
+    "category": "environment",
+    "language": "en",
+    "description": "Climate policy progress query",
+    "relevant_doc_ids": ["doc35", "doc36"],
+    "relevance_grades": {"doc35": 3, "doc36": 2}
+  },
+  {
+    "id": "q15",
+    "query": "自动驾驶事故召回",
+    "category": "tech",
+    "language": "zh",
+    "description": "Autonomous driving safety and recall query",
+    "relevant_doc_ids": ["doc37", "doc38"],
+    "relevance_grades": {"doc37": 3, "doc38": 2}
+  },
+  {
+    "id": "q16",
+    "query": "semiconductor chip export restrictions",
+    "category": "politics",
+    "language": "en",
+    "description": "Tech export controls and geopolitics query",
+    "relevant_doc_ids": ["doc39", "doc40", "doc41"],
+    "relevance_grades": {"doc39": 3, "doc40": 2, "doc41": 1}
+  },
+  {
+    "id": "q17",
+    "query": "中国房地产市场复苏",
+    "category": "finance",
+    "language": "zh",
+    "description": "Chinese real estate market recovery query",
+    "relevant_doc_ids": ["doc42", "doc43"],
+    "relevance_grades": {"doc42": 3, "doc43": 2}
+  },
+  {
+    "id": "q18",
+    "query": "generative AI copyright lawsuit",
+    "category": "tech",
+    "language": "en",
+    "description": "Legal and IP issues around generative AI",
+    "relevant_doc_ids": ["doc44", "doc45", "doc46"],
+    "relevance_grades": {"doc44": 3, "doc45": 3, "doc46": 2}
+  },
+  {
+    "id": "q19",
+    "query": "量子计算商业应用突破",
+    "category": "tech",
+    "language": "zh",
+    "description": "Quantum computing commercial applications",
+    "relevant_doc_ids": ["doc47", "doc48"],
+    "relevance_grades": {"doc47": 3, "doc48": 2}
+  },
+  {
+    "id": "q20",
+    "query": "WHO bird flu pandemic preparedness",
+    "category": "health",
+    "language": "en",
+    "description": "Global health preparedness for bird flu",
+    "relevant_doc_ids": ["doc49", "doc50", "doc51"],
+    "relevance_grades": {"doc49": 3, "doc50": 2, "doc51": 1}
+  }
+]
