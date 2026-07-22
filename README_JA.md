@@ -143,37 +143,63 @@ ai-news-search/
 │   │   └── routes.py           #   API ルート定義
 │   ├── core/
 │   │   ├── config.py           #   設定管理
-│   │   └── deps.py             #   依存性注入
+│   │   └── deps.py             #   依存性注入 (ES / Qdrant / Redis)
+│   ├── auth/                   #   認証モジュール
+│   │   ├── models.py           #   ユーザーデータモデル
+│   │   ├── service.py          #   登録/ログイン/JWT 認証サービス
+│   │   └── routes.py           #   認証 API ルート
 │   ├── ingestion/
 │   │   ├── rss_fetcher.py      #   RSS フィード取得
 │   │   ├── cleaner.py          #   コンテンツ抽出 & クリーニング
 │   │   ├── dedup.py            #   SimHash + セマンティック重複排除
 │   │   ├── sources.py          #   ニュースソース設定
+│   │   ├── social.py           #   ソーシャルメディア監視 (Twitter / Weibo)
 │   │   └── scheduler.py        #   定時取得のオーケストレーション
 │   ├── search/
 │   │   ├── query.py            #   クエリ理解 & 書換
 │   │   ├── retrieval.py        #   ハイブリッド検索 (BM25 + ベクトル)
 │   │   ├── ranking.py          #   AI リランキング
+│   │   ├── personalization.py  #   パーソナライズランキング
 │   │   └── indexer.py          #   インデックス管理
 │   ├── ai/
 │   │   ├── embedding.py        #   BGE-M3 ベクトル化
 │   │   ├── summary.py          #   AI 要約生成
 │   │   ├── nlp.py              #   NLP パイプライン (分類/NER/センチメント)
+│   │   ├── event.py            #   イベント集約 (セマンティッククラスタリング + タイムライン)
 │   │   └── processor.py        #   AI 処理パイプライン
+│   ├── subscription/           #   購読 & プッシュモジュール
+│   │   ├── models.py           #   購読/通知データモデル
+│   │   ├── service.py          #   購読管理 & 通知サービス
+│   │   └── routes.py           #   購読 API ルート
+│   ├── analytics/              #   分析トラッキングモジュール
+│   │   ├── service.py          #   イベントトラッキング & 集計
+│   │   └── routes.py           #   分析 API ルート
 │   └── evaluation/
 │       ├── metrics.py          #   評価指標の計算
-│       ├── pipeline.py         #   評価パイプライン
+│       ├── pipeline.py         #   オフライン評価パイプライン
+│       ├── online.py           #   オンライン評価 (成功率/CTR/レイテンシー)
 │       └── sample_queries.json #   アノテーション済み評価データセット
 ├── frontend/                   # Next.js フロントエンド
 │   ├── app/
-│   │   ├── layout.tsx          #   グローバルレイアウト
-│   │   └── page.tsx            #   検索ホームページ
-│   └── components/
-│       ├── SearchBox.tsx       #   検索入力ボックス
-│       ├── SummaryCard.tsx     #   AI 要約カード
-│       ├── ResultCard.tsx      #   検索結果カード
-│       ├── FilterPanel.tsx     #   フィルタパネル
-│       └── Pagination.tsx      #   ページネーション
+│   │   ├── layout.tsx          #   グローバルレイアウト (AuthProvider 付き)
+│   │   ├── page.tsx            #   検索ホームページ
+│   │   ├── search/page.tsx     #   検索結果ページ
+│   │   ├── events/page.tsx     #   イベント追跡ページ
+│   │   ├── subscriptions/page.tsx # 購読管理ページ
+│   │   └── auth/
+│   │       ├── login/page.tsx  #   ログインページ
+│   │       └── register/page.tsx # 登録ページ
+│   ├── components/
+│   │   ├── SearchBox.tsx       #   検索入力ボックス
+│   │   ├── SummaryCard.tsx     #   AI 要約カード
+│   │   ├── ResultCard.tsx      #   検索結果カード (クリックトラッキング付き)
+│   │   ├── FilterPanel.tsx     #   多次元フィルタパネル
+│   │   ├── Pagination.tsx      #   ページネーション
+│   │   ├── EventTimeline.tsx   #   イベントタイムラインコンポーネント
+│   │   └── UserMenu.tsx        #   ユーザーメニュー (ログイン/登録/プロフィール)
+│   └── lib/
+│       ├── analytics.ts        #   フロントエンド分析 SDK
+│       └── auth.tsx            #   認証コンテキスト & フック
 ├── scripts/
 │   ├── setup.sh               # 環境セットアップスクリプト
 │   ├── start_dev.sh           # 開発環境ランチャー
@@ -271,21 +297,24 @@ npm run dev
 ## ロードマップ
 
 ```
-Phase 0 · MVP（第 1–6 週）
+Phase 0 · MVP（第 1–6 週）✅ 完了
 ├── ✅ プロジェクト基盤構築 (FastAPI + Next.js)
 ├── ✅ Docker インフラオーケストレーション
-├── 20 以上のコアニュースソース接続
-├── ハイブリッド検索 + AI リランキング
-├── AI 要約生成 + 引用元明記
-├── 検索 Web UI
-└── オフライン評価パイプライン
+├── ✅ 20 以上のコアニュースソース接続
+├── ✅ ハイブリッド検索 + AI リランキング
+├── ✅ AI 要約生成 + 引用元明記
+├── ✅ 検索 Web UI
+└── ✅ オフライン評価パイプライン
 
-Phase 1 · 体験強化（第 7–10 週）
-├── イベント集約 & タイムライン
-├── パーソナライズランキング
-├── キーワード/トピック購読 & プッシュ通知
-├── 多次元フィルタパネル
-└── Grafana オンライン評価ダッシュボード
+Phase 1 · 体験強化（第 7–10 週）✅ 完了
+├── ✅ イベント集約 & タイムライン (セマンティッククラスタリング + タイムライン UI)
+├── ✅ ユーザーシステム (登録/ログイン/JWT 認証/ユーザープロファイル)
+├── ✅ パーソナライズランキング (閲読履歴 + 関心プロファイル)
+├── ✅ キーワード/トピック/イベント購読 & プッシュ通知
+├── ✅ 多次元フィルタパネル (時間/ソース/カテゴリ/センチメント/言語)
+├── ✅ フロントエンド分析 SDK (検索/クリック/閲覧/購読トラッキング)
+├── ✅ オンライン評価パイプライン (成功率/CTR/ゼロ結果率/レイテンシー)
+└── ✅ ソーシャルメディア監視 (Twitter / Weibo API 連携)
 
 Phase 2 · 高度な機能（第 11–16 週）
 ├── マルチターン対話型検索

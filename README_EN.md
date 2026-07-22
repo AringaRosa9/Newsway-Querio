@@ -143,37 +143,63 @@ ai-news-search/
 │   │   └── routes.py           #   API route definitions
 │   ├── core/
 │   │   ├── config.py           #   Configuration management
-│   │   └── deps.py             #   Dependency injection
+│   │   └── deps.py             #   Dependency injection (ES / Qdrant / Redis)
+│   ├── auth/                   #   Authentication module
+│   │   ├── models.py           #   User data models
+│   │   ├── service.py          #   Register / Login / JWT auth service
+│   │   └── routes.py           #   Auth API routes
 │   ├── ingestion/
 │   │   ├── rss_fetcher.py      #   RSS feed fetcher
 │   │   ├── cleaner.py          #   Content extraction & cleaning
 │   │   ├── dedup.py            #   SimHash + semantic dedup
 │   │   ├── sources.py          #   News source configuration
+│   │   ├── social.py           #   Social media monitoring (Twitter / Weibo)
 │   │   └── scheduler.py        #   Scheduled fetch orchestration
 │   ├── search/
 │   │   ├── query.py            #   Query understanding & rewriting
 │   │   ├── retrieval.py        #   Hybrid retrieval (BM25 + vector)
 │   │   ├── ranking.py          #   AI re-ranking
+│   │   ├── personalization.py  #   Personalized ranking
 │   │   └── indexer.py          #   Index management
 │   ├── ai/
 │   │   ├── embedding.py        #   BGE-M3 vectorization
 │   │   ├── summary.py          #   AI summary generation
 │   │   ├── nlp.py              #   NLP pipeline (classification / NER / sentiment)
+│   │   ├── event.py            #   Event aggregation (semantic clustering + timeline)
 │   │   └── processor.py        #   AI processing pipeline
+│   ├── subscription/           #   Subscription & push module
+│   │   ├── models.py           #   Subscription / notification models
+│   │   ├── service.py          #   Subscription management & notifications
+│   │   └── routes.py           #   Subscription API routes
+│   ├── analytics/              #   Analytics tracking module
+│   │   ├── service.py          #   Event tracking & aggregation
+│   │   └── routes.py           #   Analytics API routes
 │   └── evaluation/
 │       ├── metrics.py          #   Evaluation metric computation
-│       ├── pipeline.py         #   Evaluation pipeline
+│       ├── pipeline.py         #   Offline evaluation pipeline
+│       ├── online.py           #   Online evaluation (success rate / CTR / latency)
 │       └── sample_queries.json #   Annotated evaluation dataset
 ├── frontend/                   # Next.js frontend
 │   ├── app/
-│   │   ├── layout.tsx          #   Global layout
-│   │   └── page.tsx            #   Search home page
-│   └── components/
-│       ├── SearchBox.tsx       #   Search input
-│       ├── SummaryCard.tsx     #   AI summary card
-│       ├── ResultCard.tsx      #   Search result card
-│       ├── FilterPanel.tsx     #   Filter panel
-│       └── Pagination.tsx      #   Pagination
+│   │   ├── layout.tsx          #   Global layout (with AuthProvider)
+│   │   ├── page.tsx            #   Search home page
+│   │   ├── search/page.tsx     #   Search results page
+│   │   ├── events/page.tsx     #   Event tracking page
+│   │   ├── subscriptions/page.tsx # Subscription management page
+│   │   └── auth/
+│   │       ├── login/page.tsx  #   Login page
+│   │       └── register/page.tsx # Register page
+│   ├── components/
+│   │   ├── SearchBox.tsx       #   Search input
+│   │   ├── SummaryCard.tsx     #   AI summary card
+│   │   ├── ResultCard.tsx      #   Search result card (with click tracking)
+│   │   ├── FilterPanel.tsx     #   Multi-dimensional filter panel
+│   │   ├── Pagination.tsx      #   Pagination
+│   │   ├── EventTimeline.tsx   #   Event timeline component
+│   │   └── UserMenu.tsx        #   User menu (login / register / profile)
+│   └── lib/
+│       ├── analytics.ts        #   Frontend analytics SDK
+│       └── auth.tsx            #   Auth context & hooks
 ├── scripts/
 │   ├── setup.sh               # Environment setup script
 │   ├── start_dev.sh           # Dev environment launcher
@@ -271,21 +297,24 @@ The project implements a three-tier evaluation framework — offline, online, an
 ## Roadmap
 
 ```
-Phase 0 · MVP (Weeks 1–6)
+Phase 0 · MVP (Weeks 1–6) ✅ Complete
 ├── ✅ Project scaffolding (FastAPI + Next.js)
 ├── ✅ Docker infrastructure orchestration
-├── Connect 20+ core news sources
-├── Hybrid retrieval + AI re-ranking
-├── AI summary generation + citations
-├── Search web UI
-└── Offline evaluation pipeline
+├── ✅ Connect 20+ core news sources
+├── ✅ Hybrid retrieval + AI re-ranking
+├── ✅ AI summary generation + citations
+├── ✅ Search web UI
+└── ✅ Offline evaluation pipeline
 
-Phase 1 · Enhanced Experience (Weeks 7–10)
-├── Event aggregation & timeline
-├── Personalized ranking
-├── Keyword / topic subscription & push notifications
-├── Multi-dimensional filter panel
-└── Grafana online evaluation dashboard
+Phase 1 · Enhanced Experience (Weeks 7–10) ✅ Complete
+├── ✅ Event aggregation & timeline (semantic clustering + timeline UI)
+├── ✅ User system (register / login / JWT auth / user profiles)
+├── ✅ Personalized ranking (reading history + interest profiles)
+├── ✅ Keyword / topic / event subscription & push notifications
+├── ✅ Multi-dimensional filter panel (time / source / category / sentiment / language)
+├── ✅ Frontend analytics SDK (search / click / view / subscribe tracking)
+├── ✅ Online evaluation pipeline (success rate / CTR / zero-result rate / latency)
+└── ✅ Social media monitoring (Twitter / Weibo API integration)
 
 Phase 2 · Advanced Capabilities (Weeks 11–16)
 ├── Multi-turn conversational search

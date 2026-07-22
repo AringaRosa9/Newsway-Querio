@@ -2,13 +2,15 @@
 
 import { useEffect, useState, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2, AlertCircle, SearchX, Clock } from "lucide-react";
+import { Loader2, AlertCircle, SearchX, Clock, Layers, Bell } from "lucide-react";
 import Link from "next/link";
 import SearchBox from "@/components/SearchBox";
 import SummaryCard from "@/components/SummaryCard";
 import ResultCard from "@/components/ResultCard";
 import FilterPanel, { Filters } from "@/components/FilterPanel";
 import Pagination from "@/components/Pagination";
+import UserMenu from "@/components/UserMenu";
+import { trackSearch, trackClick } from "@/lib/analytics";
 
 const PAGE_SIZE = 20;
 
@@ -60,6 +62,7 @@ function buildSearchUrl(
   if (filters.category) params.set("category", filters.category);
   if (filters.sentiment) params.set("sentiment", filters.sentiment);
   if (filters.source) params.set("source", filters.source);
+  if (filters.language) params.set("language", filters.language);
   params.set("page", String(page));
   params.set("page_size", String(PAGE_SIZE));
   return `/api/search?${params.toString()}`;
@@ -97,6 +100,7 @@ function SearchPageInner() {
     category: searchParams.get("category") ?? undefined,
     sentiment: searchParams.get("sentiment") ?? undefined,
     source: searchParams.get("source") ?? undefined,
+    language: searchParams.get("language") ?? undefined,
   };
 
   const [data, setData] = useState<SearchResponse | null>(null);
@@ -119,6 +123,7 @@ function SearchPageInner() {
         }
         const json: SearchResponse = await res.json();
         setData(json);
+        trackSearch(q, json.total, json.took_ms);
       } catch (e) {
         setError(e instanceof Error ? e.message : "未知错误，请稍后重试");
       } finally {
@@ -143,6 +148,7 @@ function SearchPageInner() {
       if (filters.category) params.set("category", filters.category);
       if (filters.sentiment) params.set("sentiment", filters.sentiment);
       if (filters.source) params.set("source", filters.source);
+      if (filters.language) params.set("language", filters.language);
       if (page > 1) params.set("page", String(page));
       router.push(`/search?${params.toString()}`);
     },
@@ -184,6 +190,17 @@ function SearchPageInner() {
               onSearch={handleSearch}
               placeholder="搜索新闻..."
             />
+          </div>
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <Link href="/events" className="text-sm text-gray-500 hover:text-blue-600 flex items-center gap-1">
+              <Layers className="w-4 h-4" />
+              <span className="hidden sm:inline">事件</span>
+            </Link>
+            <Link href="/subscriptions" className="text-sm text-gray-500 hover:text-blue-600 flex items-center gap-1">
+              <Bell className="w-4 h-4" />
+              <span className="hidden sm:inline">订阅</span>
+            </Link>
+            <UserMenu />
           </div>
         </div>
       </header>
@@ -292,8 +309,13 @@ function SearchPageInner() {
                 )}
 
                 {/* Result Cards */}
-                {data.results.map((article) => (
-                  <ResultCard key={article.id} article={article} />
+                {data.results.map((article, idx) => (
+                  <ResultCard
+                    key={article.id}
+                    article={article}
+                    position={idx + 1 + (data.page - 1) * PAGE_SIZE}
+                    query={queryParam}
+                  />
                 ))}
 
                 {/* Pagination */}

@@ -44,6 +44,20 @@ class Settings(BaseSettings):
     # AI summarization
     SUMMARY_MAX_DOCS: int = 10
 
+    # Authentication
+    JWT_SECRET: str = "change-me-in-production-use-a-real-secret"
+
+    # Social media
+    TWITTER_BEARER_TOKEN: str = ""
+    WEIBO_ACCESS_TOKEN: str = ""
+
+    # Email (for subscription notifications)
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM: str = "noreply@ainews.local"
+
     # Logging
     LOG_LEVEL: str = "INFO"
 

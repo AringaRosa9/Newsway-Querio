@@ -3,6 +3,7 @@
 import { ExternalLink, Clock, Tag, Globe } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { zhCN } from "date-fns/locale";
+import { trackClick } from "@/lib/analytics";
 
 interface Article {
   id: string;
@@ -19,6 +20,8 @@ interface Article {
 
 interface ResultCardProps {
   article: Article;
+  position?: number;
+  query?: string;
 }
 
 const SENTIMENT_CONFIG: Record<
@@ -69,7 +72,7 @@ function RelativeTime({ dateStr }: { dateStr: string }) {
   }
 }
 
-export default function ResultCard({ article }: ResultCardProps) {
+export default function ResultCard({ article, position, query }: ResultCardProps) {
   const {
     title,
     content,
@@ -104,6 +107,11 @@ export default function ResultCard({ article }: ResultCardProps) {
           href={url}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => {
+            if (position != null && query) {
+              trackClick(query, article.id, position);
+            }
+          }}
           className="text-base font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-150 inline-flex items-start gap-1.5 leading-snug"
         >
           <span>{title}</span>

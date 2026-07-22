@@ -21,9 +21,12 @@ from core.config import get_settings
 from core.deps import get_es_client, get_qdrant_client
 from ai.embedding import get_embedding_service
 from ai.summary import SummaryService
+from ai.event import aggregate_events
 from search.query import ParsedQuery, parse_query
 from search.retrieval import hybrid_search
 from search.ranking import rerank
+from search.personalization import personalize
+from auth.routes import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -151,10 +154,12 @@ async def search(
     source: Optional[str] = Query(None, description="Filter by news source"),
     category: Optional[str] = Query(None, description="Filter by category"),
     sentiment: Optional[str] = Query(None, description="Filter by sentiment: positive/negative/neutral"),
+    language: Optional[str] = Query(None, description="Filter by language: zh/en"),
     page: int = Query(1, ge=1, description="Page number (1-indexed)"),
     page_size: int = Query(20, ge=1, le=100, description="Results per page"),
     es: AsyncElasticsearch = Depends(get_es_client),
     qdrant: QdrantClient = Depends(get_qdrant_client),
+    current_user: dict | None = Depends(get_current_user),
 ) -> SearchResponse:
     """Full hybrid search with AI-generated summary."""
     t0 = time.perf_counter()
@@ -190,6 +195,14 @@ async def search(
 
     # 5. Re-rank
     ranked_results = rerank(raw_results, q)
+
+    # 5.5. Personalize (if user is authenticated)
+    if current_user:
+        user_profile = current_user.get("profile")
+        from auth.service import AuthService
+        auth_svc = AuthService(es)
+        reading_history = await auth_svc.get_reading_history(current_user["id"])
+        ranked_results = personalize(ranked_results, user_profile, reading_history)
 
     # 6. Paginate
     total = len(ranked_results)
@@ -332,6 +345,29 @@ async def get_stats(
         stats["total_vectors"] = None
 
     return stats
+
+
+# ---------------------------------------------------------------------------
+# GET /api/events
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/events", tags=["events"])
+async def get_events(
+    hours: int = Query(72, ge=1, le=168, description="Look-back window in hours"),
+    es: AsyncElasticsearch = Depends(get_es_client),
+) -> dict:
+    """Aggregate recent articles into event clusters with timelines."""
+    try:
+        events = await aggregate_events(es, hours=hours)
+        return {
+            "events": [e.model_dump() for e in events],
+            "total": len(events),
+            "hours": hours,
+        }
+    except Exception as exc:
+        logger.error("Event aggregation failed: %s", exc)
+        raise HTTPException(status_code=500, detail="事件聚合失败")
 
 
 # ---------------------------------------------------------------------------

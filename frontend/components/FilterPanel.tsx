@@ -9,6 +9,7 @@ export interface Filters {
   category?: string;
   sentiment?: string;
   source?: string;
+  language?: string;
 }
 
 interface FilterPanelProps {
@@ -91,7 +92,7 @@ export default function FilterPanel({ filters, onFilterChange }: FilterPanelProp
   };
 
   const hasActiveFilters =
-    !!filters.category || !!filters.sentiment || !!filters.time_from || !!filters.source;
+    !!filters.category || !!filters.sentiment || !!filters.time_from || !!filters.source || !!filters.language;
 
   return (
     <aside className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
@@ -220,6 +221,34 @@ export default function FilterPanel({ filters, onFilterChange }: FilterPanelProp
               onChange={(e) => update({ source: e.target.value || undefined })}
               className="w-full text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 focus:outline-none focus:border-blue-400 placeholder-gray-400"
             />
+          </section>
+
+          {/* Language */}
+          <section>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              语言
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { label: "全部", value: "" },
+                { label: "中文", value: "zh" },
+                { label: "English", value: "en" },
+              ].map((lang) => (
+                <button
+                  key={lang.value}
+                  onClick={() =>
+                    update({ language: lang.value || undefined })
+                  }
+                  className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                    (local.language ?? "") === lang.value
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "bg-white text-gray-600 border-gray-200 hover:border-blue-300"
+                  }`}
+                >
+                  {lang.label}
+                </button>
+              ))}
+            </div>
           </section>
 
           {/* Action Buttons */}

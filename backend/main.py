@@ -57,8 +57,14 @@ app.add_middleware(
 # ---------------------------------------------------------------------------
 
 from api.routes import router as api_router  # noqa: E402
+from auth.routes import router as auth_router  # noqa: E402
+from subscription.routes import router as subscription_router  # noqa: E402
+from analytics.routes import router as analytics_router  # noqa: E402
 
 app.include_router(api_router)
+app.include_router(auth_router)
+app.include_router(subscription_router)
+app.include_router(analytics_router)
 
 
 # ---------------------------------------------------------------------------

@@ -143,37 +143,63 @@ ai-news-search/
 │   │   └── routes.py           #   API 路由定义
 │   ├── core/
 │   │   ├── config.py           #   配置管理
-│   │   └── deps.py             #   依赖注入
+│   │   └── deps.py             #   依赖注入 (ES / Qdrant / Redis)
+│   ├── auth/                   #   用户认证模块
+│   │   ├── models.py           #   用户数据模型
+│   │   ├── service.py          #   注册/登录/JWT 认证服务
+│   │   └── routes.py           #   认证 API 路由
 │   ├── ingestion/
 │   │   ├── rss_fetcher.py      #   RSS 源抓取
 │   │   ├── cleaner.py          #   正文提取与清洗
 │   │   ├── dedup.py            #   SimHash + 语义去重
 │   │   ├── sources.py          #   新闻源配置
+│   │   ├── social.py           #   社交媒体监听 (Twitter/微博)
 │   │   └── scheduler.py        #   定时采集调度
 │   ├── search/
 │   │   ├── query.py            #   Query 理解与改写
 │   │   ├── retrieval.py        #   混合检索 (BM25 + 向量)
 │   │   ├── ranking.py          #   AI Re-Ranking
+│   │   ├── personalization.py  #   个性化排序
 │   │   └── indexer.py          #   索引管理
 │   ├── ai/
 │   │   ├── embedding.py        #   BGE-M3 向量化
 │   │   ├── summary.py          #   AI 摘要生成
 │   │   ├── nlp.py              #   NLP 处理 (分类/实体/情感)
+│   │   ├── event.py            #   事件聚合 (语义聚类 + 时间线)
 │   │   └── processor.py        #   AI 处理管道
+│   ├── subscription/           #   订阅推送模块
+│   │   ├── models.py           #   订阅/通知数据模型
+│   │   ├── service.py          #   订阅管理 & 通知服务
+│   │   └── routes.py           #   订阅 API 路由
+│   ├── analytics/              #   埋点分析模块
+│   │   ├── service.py          #   事件追踪 & 聚合
+│   │   └── routes.py           #   分析 API 路由
 │   └── evaluation/
 │       ├── metrics.py          #   评估指标计算
-│       ├── pipeline.py         #   评估流水线
+│       ├── pipeline.py         #   离线评估流水线
+│       ├── online.py           #   在线评估 (成功率/CTR/延迟)
 │       └── sample_queries.json #   标注数据集
 ├── frontend/                   # Next.js 前端
 │   ├── app/
-│   │   ├── layout.tsx          #   全局布局
-│   │   └── page.tsx            #   搜索主页
-│   └── components/
-│       ├── SearchBox.tsx       #   搜索框
-│       ├── SummaryCard.tsx     #   AI 摘要卡片
-│       ├── ResultCard.tsx      #   搜索结果卡片
-│       ├── FilterPanel.tsx     #   筛选面板
-│       └── Pagination.tsx      #   分页组件
+│   │   ├── layout.tsx          #   全局布局 (含 AuthProvider)
+│   │   ├── page.tsx            #   搜索主页
+│   │   ├── search/page.tsx     #   搜索结果页
+│   │   ├── events/page.tsx     #   事件追踪页
+│   │   ├── subscriptions/page.tsx # 订阅管理页
+│   │   └── auth/
+│   │       ├── login/page.tsx  #   登录页
+│   │       └── register/page.tsx # 注册页
+│   ├── components/
+│   │   ├── SearchBox.tsx       #   搜索框
+│   │   ├── SummaryCard.tsx     #   AI 摘要卡片
+│   │   ├── ResultCard.tsx      #   搜索结果卡片 (含点击埋点)
+│   │   ├── FilterPanel.tsx     #   多维度筛选面板
+│   │   ├── Pagination.tsx      #   分页组件
+│   │   ├── EventTimeline.tsx   #   事件时间线组件
+│   │   └── UserMenu.tsx        #   用户菜单 (登录/注册/个人)
+│   └── lib/
+│       ├── analytics.ts        #   前端埋点 SDK
+│       └── auth.tsx            #   认证上下文 & Hooks
 ├── scripts/
 │   ├── setup.sh               # 环境初始化脚本
 │   ├── start_dev.sh           # 开发环境启动
@@ -271,21 +297,24 @@ npm run dev
 ## 开发路线图
 
 ```
-Phase 0 · MVP（第 1–6 周）
+Phase 0 · MVP（第 1–6 周）✅ 已完成
 ├── ✅ 项目脚手架 (FastAPI + Next.js)
 ├── ✅ Docker 基础设施编排
-├── 接入 20+ 核心新闻源
-├── 混合检索 + AI Re-Ranking
-├── AI 摘要生成 + 引用溯源
-├── 搜索页 Web UI
-└── 离线评估 Pipeline
+├── ✅ 接入 20+ 核心新闻源
+├── ✅ 混合检索 + AI Re-Ranking
+├── ✅ AI 摘要生成 + 引用溯源
+├── ✅ 搜索页 Web UI
+└── ✅ 离线评估 Pipeline
 
-Phase 1 · 体验增强（第 7–10 周）
-├── 事件聚合 & 时间线
-├── 个性化排序
-├── 关键词/话题订阅 & 推送
-├── 多维度筛选面板
-└── Grafana 在线评估看板
+Phase 1 · 体验增强（第 7–10 周）✅ 已完成
+├── ✅ 事件聚合 & 时间线 (语义聚类 + 时间线 UI)
+├── ✅ 用户系统 (注册/登录/JWT 认证/用户画像)
+├── ✅ 个性化排序 (阅读历史 + 兴趣画像)
+├── ✅ 关键词/话题/事件订阅 & 推送通知
+├── ✅ 多维度筛选面板 (时间/来源/分类/情感/语言)
+├── ✅ 前端埋点 SDK (搜索/点击/浏览/订阅行为追踪)
+├── ✅ 在线评估 Pipeline (成功率/CTR/零结果率/延迟)
+└── ✅ 社交媒体监听 (Twitter/微博 API 接入)
 
 Phase 2 · 深度能力（第 11–16 周）
 ├── 多轮对话式搜索

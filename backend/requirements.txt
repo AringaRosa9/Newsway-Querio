@@ -40,3 +40,6 @@ apscheduler>=3.10.4
 
 # Near-duplicate detection
 simhash>=2.1.2
+
+# Email notifications
+aiosmtplib>=3.0.0

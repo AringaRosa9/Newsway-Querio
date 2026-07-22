@@ -2,7 +2,9 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Sparkles, Globe, TrendingUp } from "lucide-react";
+import { Search, Sparkles, Globe, TrendingUp, Layers, Bell } from "lucide-react";
+import Link from "next/link";
+import UserMenu from "@/components/UserMenu";
 
 const CATEGORIES = [
   { label: "科技", value: "technology" },
@@ -64,7 +66,28 @@ export default function HomePage() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center px-4 py-16">
+    <main className="min-h-screen flex flex-col items-center justify-center px-4 py-16 relative">
+      {/* Top Navigation */}
+      <nav className="absolute top-0 left-0 right-0 flex items-center justify-between px-6 py-4">
+        <div className="flex items-center gap-4">
+          <Link
+            href="/events"
+            className="flex items-center gap-1 text-sm text-gray-500 hover:text-blue-600 transition-colors"
+          >
+            <Layers className="w-4 h-4" />
+            事件追踪
+          </Link>
+          <Link
+            href="/subscriptions"
+            className="flex items-center gap-1 text-sm text-gray-500 hover:text-blue-600 transition-colors"
+          >
+            <Bell className="w-4 h-4" />
+            订阅
+          </Link>
+        </div>
+        <UserMenu />
+      </nav>
+
       {/* Logo / Brand */}
       <div className="mb-10 text-center">
         <div className="inline-flex items-center gap-2 mb-3">
