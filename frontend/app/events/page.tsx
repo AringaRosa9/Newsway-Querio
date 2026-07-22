@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Loader2, AlertCircle, Layers } from "lucide-react";
-import Link from "next/link";
+import Navbar from "@/components/Navbar";
 import EventTimeline from "@/components/EventTimeline";
-import UserMenu from "@/components/UserMenu";
 
 interface TimelineEntry {
   article_id: string;
@@ -52,89 +51,78 @@ export default function EventsPage() {
   }, [hours]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-white border-b border-gray-100 shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/"
-              className="text-lg font-bold text-blue-600 tracking-tight"
-            >
-              AI 新闻
-            </Link>
-            <span className="text-sm text-gray-500 flex items-center gap-1">
-              <Layers className="w-4 h-4" />
-              事件追踪
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link href="/search?q=" className="text-sm text-gray-500 hover:text-blue-600">
-              搜索
-            </Link>
-            <UserMenu />
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gray-50/50">
+      <Navbar />
 
-      {/* Time range selector */}
-      <div className="max-w-5xl mx-auto px-4 py-4">
-        <div className="flex items-center gap-2 mb-6">
-          <span className="text-sm text-gray-500">时间范围：</span>
-          {[
-            { label: "24小时", value: 24 },
-            { label: "3天", value: 72 },
-            { label: "7天", value: 168 },
-          ].map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => setHours(opt.value)}
-              className={`px-3 py-1 text-xs rounded-full border transition-colors ${
-                hours === opt.value
-                  ? "bg-blue-600 text-white border-blue-600"
-                  : "bg-white text-gray-600 border-gray-200 hover:border-blue-300"
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
+        {/* Page header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
+                <Layers className="w-4 h-4 text-white" />
+              </div>
+              事件追踪
+            </h1>
+            <p className="text-sm text-gray-400 mt-1">智能聚合相关报道，追踪事件发展</p>
+          </div>
+
+          {/* Time range selector */}
+          <div className="flex items-center gap-1.5 bg-white rounded-xl border border-gray-200 p-1">
+            {[
+              { label: "24h", value: 24 },
+              { label: "3天", value: 72 },
+              { label: "7天", value: 168 },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setHours(opt.value)}
+                className={`px-3.5 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
+                  hours === opt.value
+                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm"
+                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Loading */}
         {loading && (
-          <div className="flex flex-col items-center justify-center py-20">
+          <div className="flex flex-col items-center justify-center py-24 animate-fade-in">
             <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
-            <p className="text-sm text-gray-500">正在聚合事件...</p>
+            <p className="text-sm text-gray-400">正在聚合事件...</p>
           </div>
         )}
 
         {/* Error */}
         {error && !loading && (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <AlertCircle className="w-12 h-12 text-red-400 mb-4" />
+          <div className="flex flex-col items-center justify-center py-24 text-center animate-fade-in">
+            <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mb-4">
+              <AlertCircle className="w-8 h-8 text-red-400" />
+            </div>
             <p className="text-sm text-gray-500">{error}</p>
           </div>
         )}
 
         {/* Empty */}
         {!loading && !error && events.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <Layers className="w-12 h-12 text-gray-300 mb-4" />
-            <h2 className="text-lg font-semibold text-gray-700 mb-2">
-              暂无事件
-            </h2>
-            <p className="text-sm text-gray-400">
-              所选时间范围内未检测到事件聚合
-            </p>
+          <div className="flex flex-col items-center justify-center py-24 text-center animate-fade-in">
+            <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
+              <Layers className="w-8 h-8 text-gray-300" />
+            </div>
+            <h2 className="text-lg font-semibold text-gray-700 mb-2">暂无事件</h2>
+            <p className="text-sm text-gray-400">所选时间范围内未检测到事件聚合</p>
           </div>
         )}
 
         {/* Events */}
         {!loading && !error && events.length > 0 && (
-          <div className="space-y-4">
-            <p className="text-sm text-gray-500 mb-4">
-              检测到 <strong className="text-gray-800">{events.length}</strong>{" "}
-              个事件
+          <div className="space-y-4 animate-fade-in">
+            <p className="text-sm text-gray-400">
+              检测到 <strong className="text-gray-700 font-semibold">{events.length}</strong> 个事件
             </p>
             {events.map((event) => (
               <EventTimeline key={event.id} event={event} />

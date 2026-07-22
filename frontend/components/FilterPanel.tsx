@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Filter, RotateCcw, Check } from "lucide-react";
+import { Filter, RotateCcw, Check, ChevronDown, ChevronUp } from "lucide-react";
 
 export interface Filters {
   time_from?: string;
@@ -46,7 +46,6 @@ const TIME_PRESETS = [
 function getPresetDates(preset: string): { time_from?: string; time_to?: string } {
   const now = new Date();
   const toISO = (d: Date) => d.toISOString().split("T")[0];
-
   switch (preset) {
     case "today":
       return { time_from: toISO(now), time_to: toISO(now) };
@@ -80,9 +79,7 @@ export default function FilterPanel({ filters, onFilterChange }: FilterPanelProp
     update({ time_from: dates.time_from, time_to: dates.time_to });
   };
 
-  const handleApply = () => {
-    onFilterChange(local);
-  };
+  const handleApply = () => onFilterChange(local);
 
   const handleReset = () => {
     const empty: Filters = {};
@@ -95,48 +92,43 @@ export default function FilterPanel({ filters, onFilterChange }: FilterPanelProp
     !!filters.category || !!filters.sentiment || !!filters.time_from || !!filters.source || !!filters.language;
 
   return (
-    <aside className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+    <aside className="card rounded-2xl overflow-hidden">
       {/* Header */}
       <button
-        className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center justify-between px-5 py-3.5 text-sm font-semibold text-gray-700 hover:bg-gray-50/50 transition-colors"
         onClick={() => setIsExpanded((v) => !v)}
       >
         <span className="flex items-center gap-2">
-          <Filter className="w-4 h-4" />
+          <Filter className="w-4 h-4 text-gray-400" />
           筛选条件
           {hasActiveFilters && (
-            <span className="w-2 h-2 rounded-full bg-blue-500" />
+            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
           )}
         </span>
-        <span className="text-gray-400 text-xs">{isExpanded ? "收起" : "展开"}</span>
+        {isExpanded ? (
+          <ChevronUp className="w-4 h-4 text-gray-400" />
+        ) : (
+          <ChevronDown className="w-4 h-4 text-gray-400" />
+        )}
       </button>
 
-      {/* Always-visible on desktop; collapsible on mobile */}
       <div className={`${isExpanded ? "block" : "hidden"} lg:block`}>
-        <div className="px-4 pb-4 space-y-5 border-t border-gray-50 pt-3">
+        <div className="px-5 pb-5 space-y-5 border-t border-gray-50 pt-4">
           {/* Time Range */}
-          <section>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-              时间范围
-            </p>
+          <FilterSection label="时间范围">
             <div className="flex flex-wrap gap-1.5 mb-2">
               {TIME_PRESETS.map((p) => (
-                <button
+                <ChipButton
                   key={p.value}
+                  label={p.label}
+                  active={activePreset === p.value}
                   onClick={() => handlePreset(p.value)}
-                  className={`px-3 py-1 text-xs rounded-full border transition-colors ${
-                    activePreset === p.value
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-gray-600 border-gray-200 hover:border-blue-300"
-                  }`}
-                >
-                  {p.label}
-                </button>
+                />
               ))}
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">开始日期</label>
+                <label className="text-xs text-gray-400 mb-1 block">开始</label>
                 <input
                   type="date"
                   value={local.time_from ?? ""}
@@ -144,11 +136,11 @@ export default function FilterPanel({ filters, onFilterChange }: FilterPanelProp
                     setActivePreset("custom");
                     update({ time_from: e.target.value || undefined });
                   }}
-                  className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 focus:outline-none focus:border-blue-400"
+                  className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 text-gray-700 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400/20 bg-gray-50/50"
                 />
               </div>
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">结束日期</label>
+                <label className="text-xs text-gray-400 mb-1 block">结束</label>
                 <input
                   type="date"
                   value={local.time_to ?? ""}
@@ -156,112 +148,81 @@ export default function FilterPanel({ filters, onFilterChange }: FilterPanelProp
                     setActivePreset("custom");
                     update({ time_to: e.target.value || undefined });
                   }}
-                  className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 focus:outline-none focus:border-blue-400"
+                  className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 text-gray-700 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400/20 bg-gray-50/50"
                 />
               </div>
             </div>
-          </section>
+          </FilterSection>
 
           {/* Category */}
-          <section>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-              新闻分类
-            </p>
+          <FilterSection label="新闻分类">
             <div className="flex flex-wrap gap-1.5">
               {CATEGORIES.map((c) => (
-                <button
+                <ChipButton
                   key={c.value}
+                  label={c.label}
+                  active={(local.category ?? "") === c.value}
+                  showCheck={!!(local.category && c.value)}
                   onClick={() => update({ category: c.value || undefined })}
-                  className={`px-3 py-1 text-xs rounded-full border transition-colors flex items-center gap-1 ${
-                    (local.category ?? "") === c.value
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-gray-600 border-gray-200 hover:border-blue-300"
-                  }`}
-                >
-                  {(local.category ?? "") === c.value && c.value && (
-                    <Check className="w-3 h-3" />
-                  )}
-                  {c.label}
-                </button>
+                />
               ))}
             </div>
-          </section>
+          </FilterSection>
 
           {/* Sentiment */}
-          <section>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-              情感倾向
-            </p>
+          <FilterSection label="情感倾向">
             <div className="flex flex-wrap gap-1.5">
               {SENTIMENTS.map((s) => (
-                <button
+                <ChipButton
                   key={s.value}
+                  label={s.label}
+                  active={(local.sentiment ?? "") === s.value}
                   onClick={() => update({ sentiment: s.value || undefined })}
-                  className={`px-3 py-1 text-xs rounded-full border transition-colors ${
-                    (local.sentiment ?? "") === s.value
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-gray-600 border-gray-200 hover:border-blue-300"
-                  }`}
-                >
-                  {s.label}
-                </button>
+                />
               ))}
             </div>
-          </section>
+          </FilterSection>
 
           {/* Source */}
-          <section>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-              新闻来源
-            </p>
+          <FilterSection label="新闻来源">
             <input
               type="text"
               placeholder="输入来源筛选..."
               value={local.source ?? ""}
               onChange={(e) => update({ source: e.target.value || undefined })}
-              className="w-full text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 focus:outline-none focus:border-blue-400 placeholder-gray-400"
+              className="w-full text-xs border border-gray-200 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400/20 placeholder-gray-400 bg-gray-50/50"
             />
-          </section>
+          </FilterSection>
 
           {/* Language */}
-          <section>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-              语言
-            </p>
+          <FilterSection label="语言">
             <div className="flex flex-wrap gap-1.5">
               {[
                 { label: "全部", value: "" },
                 { label: "中文", value: "zh" },
                 { label: "English", value: "en" },
               ].map((lang) => (
-                <button
+                <ChipButton
                   key={lang.value}
-                  onClick={() =>
-                    update({ language: lang.value || undefined })
-                  }
-                  className={`px-3 py-1 text-xs rounded-full border transition-colors ${
-                    (local.language ?? "") === lang.value
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-gray-600 border-gray-200 hover:border-blue-300"
-                  }`}
-                >
-                  {lang.label}
-                </button>
+                  label={lang.label}
+                  active={(local.language ?? "") === lang.value}
+                  onClick={() => update({ language: lang.value || undefined })}
+                />
               ))}
             </div>
-          </section>
+          </FilterSection>
 
-          {/* Action Buttons */}
+          {/* Actions */}
           <div className="flex gap-2 pt-1">
             <button
               onClick={handleApply}
-              className="flex-1 py-2 bg-blue-600 text-white text-xs font-semibold rounded-xl hover:bg-blue-700 transition-colors"
+              className="flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-semibold rounded-xl hover:shadow-md hover:shadow-blue-500/20 transition-all"
             >
               应用筛选
             </button>
             <button
               onClick={handleReset}
-              className="flex items-center gap-1 px-3 py-2 border border-gray-200 text-gray-600 text-xs rounded-xl hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-1 px-3 py-2.5 border border-gray-200 text-gray-500 text-xs rounded-xl hover:bg-gray-50 transition-colors"
             >
               <RotateCcw className="w-3 h-3" />
               重置
@@ -270,5 +231,40 @@ export default function FilterPanel({ filters, onFilterChange }: FilterPanelProp
         </div>
       </div>
     </aside>
+  );
+}
+
+function FilterSection({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <section>
+      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{label}</p>
+      {children}
+    </section>
+  );
+}
+
+function ChipButton({
+  label,
+  active,
+  showCheck,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  showCheck?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-3 py-1 text-xs rounded-full border transition-all duration-200 flex items-center gap-1 ${
+        active
+          ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-transparent shadow-sm"
+          : "bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600"
+      }`}
+    >
+      {active && showCheck && <Check className="w-3 h-3" />}
+      {label}
+    </button>
   );
 }

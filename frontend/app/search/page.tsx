@@ -2,15 +2,14 @@
 
 import { useEffect, useState, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2, AlertCircle, SearchX, Clock, Layers, Bell } from "lucide-react";
-import Link from "next/link";
+import { Loader2, AlertCircle, SearchX, Clock } from "lucide-react";
+import Navbar from "@/components/Navbar";
 import SearchBox from "@/components/SearchBox";
 import SummaryCard from "@/components/SummaryCard";
 import ResultCard from "@/components/ResultCard";
 import FilterPanel, { Filters } from "@/components/FilterPanel";
 import Pagination from "@/components/Pagination";
-import UserMenu from "@/components/UserMenu";
-import { trackSearch, trackClick } from "@/lib/analytics";
+import { trackSearch } from "@/lib/analytics";
 
 const PAGE_SIZE = 20;
 
@@ -50,11 +49,7 @@ interface SearchResponse {
   took_ms: number;
 }
 
-function buildSearchUrl(
-  q: string,
-  filters: Filters,
-  page: number
-): string {
+function buildSearchUrl(q: string, filters: Filters, page: number): string {
   const params = new URLSearchParams();
   if (q) params.set("q", q);
   if (filters.time_from) params.set("time_from", filters.time_from);
@@ -68,10 +63,9 @@ function buildSearchUrl(
   return `/api/search?${params.toString()}`;
 }
 
-// Loading skeleton for result cards
 function ResultSkeleton() {
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-3">
+    <div className="card rounded-2xl p-5 space-y-3">
       <div className="skeleton h-5 w-4/5 rounded" />
       <div className="flex gap-2">
         <div className="skeleton h-4 w-20 rounded-full" />
@@ -91,7 +85,6 @@ function SearchPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Parse URL params
   const queryParam = searchParams.get("q") ?? "";
   const pageParam = parseInt(searchParams.get("page") ?? "1", 10);
   const filtersFromUrl: Filters = {
@@ -117,9 +110,7 @@ function SearchPageInner() {
         const res = await fetch(url);
         if (!res.ok) {
           const text = await res.text();
-          throw new Error(
-            `服务器错误 ${res.status}: ${text.slice(0, 100)}`
-          );
+          throw new Error(`服务器错误 ${res.status}: ${text.slice(0, 100)}`);
         }
         const json: SearchResponse = await res.json();
         setData(json);
@@ -133,7 +124,6 @@ function SearchPageInner() {
     []
   );
 
-  // Fetch whenever URL params change
   useEffect(() => {
     fetchResults(queryParam, filtersFromUrl, pageParam);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -155,105 +145,59 @@ function SearchPageInner() {
     [router]
   );
 
-  const handleSearch = (q: string) => {
-    pushParams(q, filtersFromUrl, 1);
-  };
-
-  const handleFilterChange = (filters: Filters) => {
-    pushParams(queryParam, filters, 1);
-  };
-
+  const handleSearch = (q: string) => pushParams(q, filtersFromUrl, 1);
+  const handleFilterChange = (filters: Filters) => pushParams(queryParam, filters, 1);
   const handlePageChange = (page: number) => {
     pushParams(queryParam, filtersFromUrl, page);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const totalPages = data
-    ? Math.ceil(data.total / PAGE_SIZE)
-    : 0;
+  const totalPages = data ? Math.ceil(data.total / PAGE_SIZE) : 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Top Nav / Search Bar */}
-      <header className="sticky top-0 z-40 bg-white border-b border-gray-100 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-4">
-          <Link
-            href="/"
-            className="flex-shrink-0 text-lg font-bold text-blue-600 tracking-tight"
-          >
-            AI 新闻
-          </Link>
-          <div className="flex-1 max-w-2xl">
-            <SearchBox
-              defaultValue={queryParam}
-              size="sm"
-              onSearch={handleSearch}
-              placeholder="搜索新闻..."
-            />
-          </div>
-          <div className="flex items-center gap-3 flex-shrink-0">
-            <Link href="/events" className="text-sm text-gray-500 hover:text-blue-600 flex items-center gap-1">
-              <Layers className="w-4 h-4" />
-              <span className="hidden sm:inline">事件</span>
-            </Link>
-            <Link href="/subscriptions" className="text-sm text-gray-500 hover:text-blue-600 flex items-center gap-1">
-              <Bell className="w-4 h-4" />
-              <span className="hidden sm:inline">订阅</span>
-            </Link>
-            <UserMenu />
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gray-50/50">
+      {/* Navbar with embedded search */}
+      <Navbar>
+        <SearchBox defaultValue={queryParam} size="sm" onSearch={handleSearch} placeholder="搜索新闻..." />
+      </Navbar>
 
       {/* Main Layout */}
-      <div className="max-w-6xl mx-auto px-4 py-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar Filters */}
           <aside className="w-full lg:w-64 flex-shrink-0">
-            <FilterPanel
-              filters={filtersFromUrl}
-              onFilterChange={handleFilterChange}
-            />
+            <FilterPanel filters={filtersFromUrl} onFilterChange={handleFilterChange} />
           </aside>
 
-          {/* Results Area */}
+          {/* Results */}
           <main className="flex-1 min-w-0">
             {/* Results Meta */}
             {data && !loading && (
-              <div className="flex items-center justify-between mb-4 text-sm text-gray-500">
-                <span>
+              <div className="flex items-center justify-between mb-5 animate-fade-in">
+                <span className="text-sm text-gray-500">
                   共{" "}
-                  <strong className="text-gray-800">
+                  <strong className="text-gray-800 font-semibold">
                     {data.total.toLocaleString("zh-CN")}
                   </strong>{" "}
                   条结果
                   {queryParam && (
-                    <span>
-                      {" "}
-                      —{" "}
-                      <span className="text-gray-600 font-medium">
-                        &ldquo;{queryParam}&rdquo;
-                      </span>
+                    <span className="text-gray-400">
+                      {" — "}
+                      <span className="text-gray-600">&ldquo;{queryParam}&rdquo;</span>
                     </span>
                   )}
                 </span>
-                <span className="flex items-center gap-1 text-gray-400">
-                  <Clock className="w-3.5 h-3.5" />
+                <span className="flex items-center gap-1 text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">
+                  <Clock className="w-3 h-3" />
                   {data.took_ms} ms
                 </span>
               </div>
             )}
 
-            {/* Loading State */}
+            {/* Loading */}
             {loading && (
-              <div className="space-y-4">
-                {/* Summary skeleton */}
-                <SummaryCard
-                  summary=""
-                  citations={[]}
-                  articleCount={0}
-                  loading={true}
-                />
+              <div className="space-y-4 animate-fade-in">
+                <SummaryCard summary="" citations={[]} articleCount={0} loading />
                 {Array.from({ length: 5 }).map((_, i) => (
                   <ResultSkeleton key={i} />
                 ))}
@@ -263,32 +207,30 @@ function SearchPageInner() {
               </div>
             )}
 
-            {/* Error State */}
+            {/* Error */}
             {error && !loading && (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <AlertCircle className="w-12 h-12 text-red-400 mb-4" />
-                <h2 className="text-lg font-semibold text-gray-800 mb-2">
-                  搜索出错
-                </h2>
-                <p className="text-sm text-gray-500 max-w-md mb-4">{error}</p>
+              <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
+                <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mb-4">
+                  <AlertCircle className="w-8 h-8 text-red-400" />
+                </div>
+                <h2 className="text-lg font-semibold text-gray-800 mb-2">搜索出错</h2>
+                <p className="text-sm text-gray-500 max-w-md mb-6">{error}</p>
                 <button
-                  onClick={() =>
-                    fetchResults(queryParam, filtersFromUrl, pageParam)
-                  }
-                  className="px-4 py-2 bg-blue-600 text-white text-sm rounded-xl hover:bg-blue-700 transition-colors"
+                  onClick={() => fetchResults(queryParam, filtersFromUrl, pageParam)}
+                  className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium rounded-xl hover:shadow-lg hover:shadow-blue-500/25 transition-all"
                 >
                   重试
                 </button>
               </div>
             )}
 
-            {/* Empty State */}
+            {/* Empty */}
             {data && !loading && data.results.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <SearchX className="w-12 h-12 text-gray-300 mb-4" />
-                <h2 className="text-lg font-semibold text-gray-700 mb-2">
-                  未找到相关结果
-                </h2>
+              <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
+                <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
+                  <SearchX className="w-8 h-8 text-gray-300" />
+                </div>
+                <h2 className="text-lg font-semibold text-gray-700 mb-2">未找到相关结果</h2>
                 <p className="text-sm text-gray-400 max-w-md">
                   尝试使用不同的关键词，或调整筛选条件
                 </p>
@@ -298,17 +240,14 @@ function SearchPageInner() {
             {/* Results */}
             {data && !loading && data.results.length > 0 && (
               <div className="space-y-4">
-                {/* AI Summary Card */}
                 {data.summary && data.summary.summary_text && (
                   <SummaryCard
                     summary={data.summary.summary_text}
                     citations={data.summary.citations ?? []}
                     articleCount={data.results.length}
-                    loading={false}
                   />
                 )}
 
-                {/* Result Cards */}
                 {data.results.map((article, idx) => (
                   <ResultCard
                     key={article.id}
@@ -318,7 +257,6 @@ function SearchPageInner() {
                   />
                 ))}
 
-                {/* Pagination */}
                 <div className="mt-6">
                   <Pagination
                     currentPage={data.page}

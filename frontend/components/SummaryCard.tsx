@@ -16,21 +16,11 @@ interface SummaryCardProps {
   loading?: boolean;
 }
 
-/**
- * Renders summary text and replaces [N] citation markers with superscript links.
- */
-function SummaryText({
-  text,
-  citations,
-}: {
-  text: string;
-  citations: Citation[];
-}) {
-  // Split on [N] citation markers
+function SummaryText({ text, citations }: { text: string; citations: Citation[] }) {
   const parts = text.split(/(\[\d+\])/g);
 
   return (
-    <p className="text-gray-800 leading-relaxed text-sm">
+    <p className="text-gray-700 leading-relaxed text-sm">
       {parts.map((part, i) => {
         const match = part.match(/^\[(\d+)\]$/);
         if (match) {
@@ -51,16 +41,13 @@ function SummaryText({
             );
           }
         }
-        // Handle **bold** markdown
         if (part.includes("**")) {
           const boldParts = part.split(/(\*\*[^*]+\*\*)/g);
           return (
             <span key={i}>
               {boldParts.map((bp, j) => {
                 const boldMatch = bp.match(/^\*\*(.+)\*\*$/);
-                if (boldMatch) {
-                  return <strong key={j}>{boldMatch[1]}</strong>;
-                }
+                if (boldMatch) return <strong key={j}>{boldMatch[1]}</strong>;
                 return bp;
               })}
             </span>
@@ -80,7 +67,7 @@ export default function SummaryCard({
 }: SummaryCardProps) {
   if (loading) {
     return (
-      <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 mb-4">
+      <div className="card rounded-2xl p-5 mb-4 summary-bar pl-8">
         <div className="flex items-center gap-2 mb-3">
           <div className="skeleton h-5 w-16 rounded" />
           <div className="skeleton h-4 w-24 rounded" />
@@ -97,15 +84,15 @@ export default function SummaryCard({
   if (!summary) return null;
 
   return (
-    <div className="bg-blue-50 border-l-4 border-blue-400 border border-blue-200 rounded-2xl p-5 mb-4 shadow-sm">
+    <div className="card card-elevated rounded-2xl p-5 mb-4 summary-bar pl-8 bg-gradient-to-r from-blue-50/80 to-indigo-50/50 border-blue-100/60 animate-fade-in">
       {/* Header */}
       <div className="flex items-center gap-2 mb-3">
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-600 text-white text-xs font-semibold rounded-full">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-semibold rounded-full shadow-sm">
           <Sparkles className="w-3 h-3" />
           AI 摘要
         </span>
         {articleCount > 0 && (
-          <span className="text-xs text-blue-500">
+          <span className="text-xs text-blue-500/70">
             基于 {articleCount} 篇报道生成
           </span>
         )}
@@ -118,8 +105,8 @@ export default function SummaryCard({
 
       {/* Citations */}
       {citations && citations.length > 0 && (
-        <div className="border-t border-blue-200 pt-3">
-          <p className="text-xs font-medium text-blue-700 mb-2">参考来源</p>
+        <div className="border-t border-blue-100/60 pt-3">
+          <p className="text-xs font-semibold text-blue-600/70 mb-2">参考来源</p>
           <ol className="space-y-1">
             {citations.map((c) => (
               <li key={c.index} className="flex items-start gap-1.5 text-xs">
@@ -133,7 +120,7 @@ export default function SummaryCard({
                   className="text-blue-600 hover:text-blue-800 hover:underline line-clamp-1 flex items-center gap-1"
                 >
                   <span>{c.title}</span>
-                  <span className="text-blue-400 text-xs">({c.source})</span>
+                  <span className="text-blue-400">({c.source})</span>
                   <ExternalLink className="w-3 h-3 flex-shrink-0 text-blue-400" />
                 </a>
               </li>
