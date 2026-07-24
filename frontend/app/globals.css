@@ -358,3 +358,76 @@ button, input, select, textarea {
   border-radius: 50%;
   filter: blur(40px);
 }
+
+/* ================================================================
+   Mobile Responsive Enhancements
+   ================================================================ */
+
+@media (max-width: 640px) {
+  .hero-blob {
+    display: none;
+  }
+
+  .card {
+    border-radius: var(--radius-md);
+  }
+
+  .summary-bar {
+    padding-left: 1.25rem !important;
+  }
+  .summary-bar::before {
+    width: 3px;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-blob-1 { width: 250px; height: 250px; }
+  .hero-blob-2 { width: 200px; height: 200px; }
+  .hero-blob-3 { width: 150px; height: 150px; }
+}
+
+/* Touch-friendly tap targets */
+@media (pointer: coarse) {
+  button, a, input, select, textarea {
+    min-height: 44px;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  textarea {
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+}
+
+/* Safe area padding for notched devices */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .chat-input-area {
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* ================================================================
+   Chat-specific Styles
+   ================================================================ */
+.chat-message-enter {
+  animation: fade-in 0.3s ease-out both;
+}
+
+@keyframes typing-dots {
+  0%, 60%, 100% { opacity: 0.3; }
+  30% { opacity: 1; }
+}
+
+.typing-dot:nth-child(1) { animation: typing-dots 1.4s infinite 0s; }
+.typing-dot:nth-child(2) { animation: typing-dots 1.4s infinite 0.2s; }
+.typing-dot:nth-child(3) { animation: typing-dots 1.4s infinite 0.4s; }
+
+/* ================================================================
+   Print Styles
+   ================================================================ */
+@media print {
+  nav, header, .no-print { display: none !important; }
+  body { background: white; color: black; }
+  .card { box-shadow: none; border: 1px solid #ddd; }
+}

@@ -38,12 +38,22 @@ settings = get_settings()
 
 app = FastAPI(
     title=settings.APP_NAME,
-    version="0.1.0",
-    description="AI-powered news search and summarisation backend.",
+    version="2.0.0",
+    description="AI-powered news search and summarisation backend with dialogue, cross-lingual search, and industry verticals.",
     lifespan=lifespan,
 )
 
-# Allow all origins during MVP development; tighten for production.
+# Security middleware (order matters: outermost first)
+from security.middleware import RateLimitMiddleware, RequestValidationMiddleware  # noqa: E402
+
+app.add_middleware(RequestValidationMiddleware)
+app.add_middleware(
+    RateLimitMiddleware,
+    redis_url=settings.REDIS_URL,
+    requests_per_minute=60,
+    burst_limit=10,
+)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -60,11 +70,15 @@ from api.routes import router as api_router  # noqa: E402
 from auth.routes import router as auth_router  # noqa: E402
 from subscription.routes import router as subscription_router  # noqa: E402
 from analytics.routes import router as analytics_router  # noqa: E402
+from ab_test.routes import router as ab_test_router  # noqa: E402
+from ai.chat_routes import router as chat_router  # noqa: E402
 
 app.include_router(api_router)
 app.include_router(auth_router)
 app.include_router(subscription_router)
 app.include_router(analytics_router)
+app.include_router(ab_test_router)
+app.include_router(chat_router)
 
 
 # ---------------------------------------------------------------------------
@@ -81,6 +95,6 @@ async def health() -> dict:
 async def root() -> dict:
     return {
         "app": settings.APP_NAME,
-        "version": "0.1.0",
+        "version": "2.0.0",
         "docs": "/docs",
     }

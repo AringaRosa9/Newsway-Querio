@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sparkles, Search, Layers, Bell } from "lucide-react";
+import { Sparkles, Search, Layers, Bell, MessageCircle } from "lucide-react";
 import UserMenu from "./UserMenu";
 
 interface NavbarProps {
@@ -12,6 +12,7 @@ interface NavbarProps {
 
 const NAV_LINKS = [
   { href: "/search?q=", label: "搜索", icon: Search },
+  { href: "/chat", label: "对话", icon: MessageCircle },
   { href: "/events", label: "事件追踪", icon: Layers },
   { href: "/subscriptions", label: "订阅", icon: Bell },
 ];

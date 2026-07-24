@@ -14,18 +14,25 @@ from typing import Any, Optional
 
 from elasticsearch import AsyncElasticsearch, NotFoundError
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from qdrant_client import QdrantClient
+import redis.asyncio as aioredis
 
 from core.config import get_settings
-from core.deps import get_es_client, get_qdrant_client
+from core.deps import get_es_client, get_qdrant_client, get_redis_client
 from ai.embedding import get_embedding_service
 from ai.summary import SummaryService
+from ai.streaming import stream_summary
 from ai.event import aggregate_events
 from search.query import ParsedQuery, parse_query
 from search.retrieval import hybrid_search
 from search.ranking import rerank
 from search.personalization import personalize
+from search.crosslingual import crosslingual_search, detect_language
+from search.vertical import detect_vertical, apply_vertical_boost, list_verticals
+from cache.service import CacheService
+from security.middleware import sanitize_search_query
 from auth.routes import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -157,21 +164,45 @@ async def search(
     language: Optional[str] = Query(None, description="Filter by language: zh/en"),
     page: int = Query(1, ge=1, description="Page number (1-indexed)"),
     page_size: int = Query(20, ge=1, le=100, description="Results per page"),
+    crosslingual: bool = Query(True, description="Enable cross-language search"),
     es: AsyncElasticsearch = Depends(get_es_client),
     qdrant: QdrantClient = Depends(get_qdrant_client),
+    redis: aioredis.Redis = Depends(get_redis_client),
     current_user: dict | None = Depends(get_current_user),
 ) -> SearchResponse:
-    """Full hybrid search with AI-generated summary."""
+    """Full hybrid search with AI-generated summary, caching, cross-language, and vertical boost."""
     t0 = time.perf_counter()
     settings = get_settings()
 
+    # 0. Sanitize input
+    try:
+        safe_q = sanitize_search_query(q)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid search query")
+
+    # 0.5. Check cache
+    cache_svc = CacheService(redis)
+    filter_dict = {
+        "time_from": time_from.isoformat() if time_from else None,
+        "time_to": time_to.isoformat() if time_to else None,
+        "source": source, "category": category,
+        "sentiment": sentiment, "language": language,
+    }
+    cached = await cache_svc.get_cached_results(safe_q, filter_dict)
+    if cached and not current_user:
+        await cache_svc.record_hit("search")
+        took_ms = (time.perf_counter() - t0) * 1000
+        cached["took_ms"] = round(took_ms, 2)
+        return SearchResponse(**cached)
+    await cache_svc.record_miss("search")
+
     # 1. Parse the query
-    parsed = parse_query(q)
+    parsed = parse_query(safe_q)
 
     # 2. Embed the query
     try:
         embedding_svc = get_embedding_service()
-        query_vector = embedding_svc.get_query_embedding(q)
+        query_vector = embedding_svc.get_query_embedding(safe_q)
     except Exception as exc:
         logger.error("Embedding failed: %s", exc)
         raise HTTPException(status_code=503, detail="Embedding service unavailable")
@@ -179,24 +210,40 @@ async def search(
     # 3. Build filters
     filters = _build_search_filters(time_from, time_to, source, category, sentiment, parsed)
 
-    # 4. Hybrid search
+    # 4. Hybrid search (with optional cross-language)
     try:
-        raw_results = await hybrid_search(
-            es_client=es,
-            qdrant_client=qdrant,
-            query=q,
-            query_vector=query_vector,
-            filters=filters,
-            top_k=settings.MAX_SEARCH_RESULTS,
-        )
+        if crosslingual and detect_language(safe_q) != "mixed":
+            raw_results = await crosslingual_search(
+                es_client=es,
+                qdrant_client=qdrant,
+                query=safe_q,
+                query_vector=query_vector,
+                filters=filters,
+                top_k=settings.MAX_SEARCH_RESULTS,
+                api_key=settings.ANTHROPIC_API_KEY,
+            )
+        else:
+            raw_results = await hybrid_search(
+                es_client=es,
+                qdrant_client=qdrant,
+                query=safe_q,
+                query_vector=query_vector,
+                filters=filters,
+                top_k=settings.MAX_SEARCH_RESULTS,
+            )
     except Exception as exc:
-        logger.error("Hybrid search failed: %s", exc)
+        logger.error("Search failed: %s", exc)
         raise HTTPException(status_code=503, detail="Search service error")
 
     # 5. Re-rank
-    ranked_results = rerank(raw_results, q)
+    ranked_results = rerank(raw_results, safe_q)
 
-    # 5.5. Personalize (if user is authenticated)
+    # 5.5. Industry vertical boost
+    vertical = detect_vertical(safe_q)
+    if vertical:
+        ranked_results = apply_vertical_boost(ranked_results, vertical)
+
+    # 5.6. Personalize (if user is authenticated)
     if current_user:
         user_profile = current_user.get("profile")
         from auth.service import AuthService
@@ -210,23 +257,32 @@ async def search(
     end = start + page_size
     page_results = ranked_results[start:end]
 
-    # 7. Generate AI summary from top docs (capped at SUMMARY_MAX_DOCS)
+    # 7. Generate AI summary (check cache first)
     summary_docs = ranked_results[: settings.SUMMARY_MAX_DOCS]
-    try:
-        summary_svc = SummaryService(api_key=settings.ANTHROPIC_API_KEY)
-        summary_data = await summary_svc.generate_summary(q, summary_docs)
-    except Exception as exc:
-        logger.error("Summary generation failed: %s", exc)
-        summary_data = {
-            "summary_text": "Summary unavailable.",
-            "citations": [],
-            "generated_at": datetime.now(tz=timezone.utc),
-        }
+    article_ids = [str(d.get("id", "")) for d in summary_docs]
+
+    cached_summary = await cache_svc.get_cached_summary(safe_q, article_ids)
+    if cached_summary:
+        await cache_svc.record_hit("summary")
+        summary_data = cached_summary
+    else:
+        await cache_svc.record_miss("summary")
+        try:
+            summary_svc = SummaryService(api_key=settings.ANTHROPIC_API_KEY)
+            summary_data = await summary_svc.generate_summary(safe_q, summary_docs)
+            await cache_svc.cache_summary(safe_q, article_ids, summary_data)
+        except Exception as exc:
+            logger.error("Summary generation failed: %s", exc)
+            summary_data = {
+                "summary_text": "Summary unavailable.",
+                "citations": [],
+                "generated_at": datetime.now(tz=timezone.utc),
+            }
 
     took_ms = (time.perf_counter() - t0) * 1000
 
-    return SearchResponse(
-        query=q,
+    response_data = SearchResponse(
+        query=safe_q,
         parsed_query=parsed,
         summary=SummaryData(**summary_data),
         results=[_article_result_from_dict(r) for r in page_results],
@@ -235,6 +291,97 @@ async def search(
         page_size=page_size,
         took_ms=round(took_ms, 2),
     )
+
+    if not current_user:
+        await cache_svc.cache_results(safe_q, filter_dict, response_data.model_dump(mode="json"))
+
+    return response_data
+
+
+# ---------------------------------------------------------------------------
+# GET /api/search/stream — SSE streaming summary
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/search/stream", tags=["search"])
+async def search_stream(
+    q: str = Query(..., min_length=1, description="Search query"),
+    time_from: Optional[datetime] = Query(None),
+    time_to: Optional[datetime] = Query(None),
+    source: Optional[str] = Query(None),
+    category: Optional[str] = Query(None),
+    sentiment: Optional[str] = Query(None),
+    es: AsyncElasticsearch = Depends(get_es_client),
+    qdrant: QdrantClient = Depends(get_qdrant_client),
+) -> StreamingResponse:
+    """Streaming search: returns results immediately, then streams AI summary via SSE."""
+    settings = get_settings()
+
+    try:
+        safe_q = sanitize_search_query(q)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid search query")
+
+    try:
+        embedding_svc = get_embedding_service()
+        query_vector = embedding_svc.get_query_embedding(safe_q)
+    except Exception as exc:
+        logger.error("Embedding failed: %s", exc)
+        raise HTTPException(status_code=503, detail="Embedding service unavailable")
+
+    parsed = parse_query(safe_q)
+    filters = _build_search_filters(time_from, time_to, source, category, sentiment, parsed)
+
+    raw_results = await hybrid_search(
+        es_client=es, qdrant_client=qdrant,
+        query=safe_q, query_vector=query_vector,
+        filters=filters, top_k=settings.MAX_SEARCH_RESULTS,
+    )
+    ranked = rerank(raw_results, safe_q)
+    summary_docs = ranked[:settings.SUMMARY_MAX_DOCS]
+
+    import json as _json
+
+    async def _event_generator():
+        results_data = [_article_result_from_dict(r).model_dump(mode="json") for r in ranked[:20]]
+        yield f"event: results\ndata: {_json.dumps({'results': results_data, 'total': len(ranked)}, ensure_ascii=False)}\n\n"
+
+        async for chunk in _async_stream_wrapper(stream_summary(safe_q, summary_docs)):
+            yield chunk
+
+    return StreamingResponse(_event_generator(), media_type="text/event-stream")
+
+
+async def _async_stream_wrapper(gen):
+    async for item in gen:
+        yield item
+
+
+# ---------------------------------------------------------------------------
+# Vertical & Cache utility endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/verticals", tags=["search"])
+async def get_verticals() -> dict:
+    return {"verticals": list_verticals()}
+
+
+@router.get("/api/cache/stats", tags=["ops"])
+async def cache_stats(
+    redis: aioredis.Redis = Depends(get_redis_client),
+) -> dict:
+    svc = CacheService(redis)
+    return await svc.get_stats()
+
+
+@router.post("/api/cache/invalidate", tags=["ops"])
+async def invalidate_cache(
+    redis: aioredis.Redis = Depends(get_redis_client),
+) -> dict:
+    svc = CacheService(redis)
+    count = await svc.invalidate_all()
+    return {"invalidated": count}
 
 
 # ---------------------------------------------------------------------------
