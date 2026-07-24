@@ -73,9 +73,11 @@
 新闻源 → RSS/API采集 → 清洗去重 → NLP处理 → BGE-M3向量化 → 入库(ES+Qdrant)
                                                                     ↓
 用户提问 → 意图识别 → Query改写 → 双路召回(BM25+向量) → Re-Ranking → AI摘要 → 返回结果
-                                   ↓                                          ↑
-                              时间/实体/                              Top-10 文档 +
-                              意图推断                                引用溯源链接
+              ↓          ↓                                                     ↑
+         跨语言翻译   时间/实体/                                       Top-10 文档 +
+         (中↔英)     意图推断                                         引用溯源链接
+                                                                        ↓
+                                                              多轮对话追问 (SSE 流式)
 ```
 
 ---
@@ -114,6 +116,38 @@
 - 智能判断"实质性进展"，过滤重复内容
 - 基于阅读历史构建兴趣画像，个性化排序
 
+### 多轮对话式搜索
+
+基于搜索结果进行多轮追问，流式输出实时响应。
+
+- 上下文感知的多轮对话，连续追问不丢上下文
+- SSE 流式输出，实时显示 AI 回答
+- 对话历史管理，随时回顾之前的对话
+
+### 跨语言检索
+
+支持中英文互搜，打破语言壁垒获取全球新闻。
+
+- 中文提问检索英文报道，英文提问检索中文新闻
+- 基于多语言向量模型的语义对齐
+- 查询自动翻译与结果融合排序
+
+### 行业垂直搜索
+
+针对金融、科技等垂直领域的专业化搜索能力。
+
+- 行业术语识别与扩展
+- 领域专属的权重调优
+- 垂直领域专业数据源接入
+
+### A/B 测试框架
+
+内置实验平台，支持搜索策略的在线对比评估。
+
+- 流量分桶、指标追踪、显著性检验
+- 支持排序算法、摘要策略等多维度实验
+- 实验报告自动生成
+
 ---
 
 ## 技术栈
@@ -129,6 +163,7 @@
 | LLM | **Claude API** | 摘要生成、对话、Query 理解 |
 | 数据采集 | **Scrapy + RSSHub** | RSS/API 新闻抓取 |
 | 缓存/队列 | **Redis** | 热门 Query 缓存、任务队列 |
+| 安全 | **自研中间件** | 速率限制、CORS、请求校验 |
 | 监控 | **Grafana + Prometheus** | 系统监控、评估看板 |
 
 ---
@@ -139,6 +174,7 @@
 ai-news-search/
 ├── backend/                    # FastAPI 后端服务
 │   ├── main.py                 #   应用入口
+│   ├── requirements.txt        #   Python 依赖
 │   ├── api/
 │   │   └── routes.py           #   API 路由定义
 │   ├── core/
@@ -160,13 +196,25 @@ ai-news-search/
 │   │   ├── retrieval.py        #   混合检索 (BM25 + 向量)
 │   │   ├── ranking.py          #   AI Re-Ranking
 │   │   ├── personalization.py  #   个性化排序
-│   │   └── indexer.py          #   索引管理
+│   │   ├── indexer.py          #   索引管理
+│   │   ├── crosslingual.py     #   跨语言检索 (中英互搜)
+│   │   └── vertical.py         #   行业垂直搜索 (金融/科技)
 │   ├── ai/
 │   │   ├── embedding.py        #   BGE-M3 向量化
 │   │   ├── summary.py          #   AI 摘要生成
 │   │   ├── nlp.py              #   NLP 处理 (分类/实体/情感)
 │   │   ├── event.py            #   事件聚合 (语义聚类 + 时间线)
-│   │   └── processor.py        #   AI 处理管道
+│   │   ├── processor.py        #   AI 处理管道
+│   │   ├── chat_routes.py      #   对话式搜索 API 路由
+│   │   ├── dialogue.py         #   多轮对话管理
+│   │   └── streaming.py        #   SSE 流式输出
+│   ├── ab_test/                #   A/B 测试模块
+│   │   ├── routes.py           #   实验 API 路由
+│   │   └── service.py          #   分桶/指标/显著性检验
+│   ├── cache/                  #   缓存模块
+│   │   └── service.py          #   多级缓存策略
+│   ├── security/               #   安全模块
+│   │   └── middleware.py       #   速率限制/CORS/请求校验
 │   ├── subscription/           #   订阅推送模块
 │   │   ├── models.py           #   订阅/通知数据模型
 │   │   ├── service.py          #   订阅管理 & 通知服务
@@ -183,13 +231,18 @@ ai-news-search/
 │   ├── app/
 │   │   ├── layout.tsx          #   全局布局 (含 AuthProvider)
 │   │   ├── page.tsx            #   搜索主页
+│   │   ├── globals.css         #   全局样式
 │   │   ├── search/page.tsx     #   搜索结果页
+│   │   ├── chat/page.tsx       #   AI 对话搜索页
 │   │   ├── events/page.tsx     #   事件追踪页
 │   │   ├── subscriptions/page.tsx # 订阅管理页
+│   │   ├── robots.ts           #   SEO robots 配置
+│   │   ├── sitemap.ts          #   SEO sitemap 生成
 │   │   └── auth/
 │   │       ├── login/page.tsx  #   登录页
 │   │       └── register/page.tsx # 注册页
 │   ├── components/
+│   │   ├── Navbar.tsx          #   顶部导航栏
 │   │   ├── SearchBox.tsx       #   搜索框
 │   │   ├── SummaryCard.tsx     #   AI 摘要卡片
 │   │   ├── ResultCard.tsx      #   搜索结果卡片 (含点击埋点)
@@ -197,13 +250,20 @@ ai-news-search/
 │   │   ├── Pagination.tsx      #   分页组件
 │   │   ├── EventTimeline.tsx   #   事件时间线组件
 │   │   └── UserMenu.tsx        #   用户菜单 (登录/注册/个人)
+│   ├── public/
+│   │   └── manifest.json       #   PWA 配置清单
 │   └── lib/
 │       ├── analytics.ts        #   前端埋点 SDK
 │       └── auth.tsx            #   认证上下文 & Hooks
+├── docs/                       # 项目文档
+│   ├── API.md                 # API 接口文档
+│   ├── OPERATIONS.md          # 运维部署指南
+│   └── USER_GUIDE.md          # 用户使用手册
 ├── scripts/
 │   ├── setup.sh               # 环境初始化脚本
 │   ├── start_dev.sh           # 开发环境启动
-│   └── seed_data.py           # 测试数据填充
+│   ├── seed_data.py           # 测试数据填充
+│   └── load_test.py           # 性能压力测试
 ├── tests/
 │   ├── conftest.py            # 测试配置
 │   ├── test_search.py         # 搜索功能测试
@@ -316,12 +376,23 @@ Phase 1 · 体验增强（第 7–10 周）✅ 已完成
 ├── ✅ 在线评估 Pipeline (成功率/CTR/零结果率/延迟)
 └── ✅ 社交媒体监听 (Twitter/微博 API 接入)
 
-Phase 2 · 深度能力（第 11–16 周）
-├── 多轮对话式搜索
-├── 跨语言检索（中英互搜）
-├── 行业垂直定制（金融/科技）
-├── A/B 测试框架
-└── 移动端适配
+Phase 2 · 深度能力（第 11–16 周）✅ 已完成
+├── ✅ 多轮对话式搜索 (SSE 流式输出 + 上下文管理)
+├── ✅ 跨语言检索 (中英互搜、查询翻译、结果融合)
+├── ✅ 行业垂直定制 (金融/科技领域专业化搜索)
+├── ✅ A/B 测试框架 (分桶/指标追踪/显著性检验)
+├── ✅ 安全中间件 (速率限制/CORS/请求校验)
+├── ✅ 多级缓存策略 (热门 Query 缓存加速)
+├── ✅ SEO 优化 (robots.ts / sitemap.ts)
+├── ✅ PWA 支持 (manifest.json)
+├── ✅ 项目文档 (API 文档 / 运维指南 / 用户手册)
+└── ✅ 性能压测工具 (load_test.py)
+
+Phase 3 · 规模化（规划中）
+├── 移动端原生适配
+├── 多租户 SaaS 支持
+├── 分布式采集集群
+└── 模型微调与私有化部署
 ```
 
 ---
